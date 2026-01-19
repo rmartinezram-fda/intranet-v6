@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  mysql_db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: sigfa_db_final  # <--- CAMBIO 1: Nombre nuevo
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data_final:/var/lib/mysql # <--- CAMBIO 2: Volumen nuevo
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    restart: always
+    links:
+      - mysql_db
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: mysql_db
+      MYSQL_ROOT_PASSWORD: root
+
+volumes:
+  mysql_data_final: # <--- CAMBIO 3: Volumen nuevo
