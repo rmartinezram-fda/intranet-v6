@@ -7,6 +7,12 @@ export class Prestamo {
   @PrimaryGeneratedColumn()
   id_prestamo: number;
 
+  @Column({ nullable: true }) // <--- AÑADIR ESTO
+  representante: string;
+
+  @Column({ type: 'text', nullable: true }) // <--- AÑADIR ESTO
+  observaciones: string;
+
   @Column({ default: false })
   finalizado: boolean;
 

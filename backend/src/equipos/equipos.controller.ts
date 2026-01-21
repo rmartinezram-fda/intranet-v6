@@ -1,14 +1,13 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Patch, Delete } from '@nestjs/common';
 import { EquiposService } from './equipos.service';
+import { Equipo } from '../entities/equipo.entity';
 
 @Controller('equipos')
 export class EquiposController {
-  // Aquí inyectamos el servicio y lo llamamos 'equiposService'
   constructor(private readonly equiposService: EquiposService) {}
 
   @Post()
-  create(@Body() createEquipoDto: any) {
-    // CORREGIDO: Añadida la 's' que faltaba
+  create(@Body() createEquipoDto: Partial<Equipo>) {
     return this.equiposService.create(createEquipoDto);
   }
 
@@ -17,8 +16,30 @@ export class EquiposController {
     return this.equiposService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.equiposService.findOne(+id);
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() updateEquipoDto: Partial<Equipo>) {
+    return this.equiposService.update(+id, updateEquipoDto);
   }
+
+  // Nuevo endpoint para prestar
+  @Patch(':id/prestar')
+  prestar(@Param('id') id: string, @Body() datos: any) {
+    return this.equiposService.prestar(+id, datos);
+  }
+
+  // Nuevo endpoint para devolver
+  @Patch(':id/devolver')
+  devolver(@Param('id') id: string, @Body() datos: any) {
+    return this.equiposService.devolver(+id, datos);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.equiposService.remove(+id);
+  }
+
+  @Get('historico')
+  getHistorico() {
+    return this.equiposService.getHistorico();
+}
 }

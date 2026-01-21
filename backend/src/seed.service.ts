@@ -1,148 +1,64 @@
 import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { Equipo } from './entities/equipo.entity';
 import * as XLSX from 'xlsx';
 import * as path from 'path';
-import * as fs from 'fs';
-
-import { Alumno } from './entities/alumno.entity';
-import { Equipo } from './entities/equipo.entity';
-import { Profesor } from './entities/profesor.entity';
 
 @Injectable()
 export class SeedService implements OnApplicationBootstrap {
   constructor(
-    @InjectRepository(Alumno) private alumnoRepo: Repository<Alumno>,
-    @InjectRepository(Equipo) private equipoRepo: Repository<Equipo>,
-    @InjectRepository(Profesor) private profesorRepo: Repository<Profesor>,
+    @InjectRepository(Equipo)
+    private readonly equipoRepository: Repository<Equipo>,
   ) {}
 
-  async onApplicationBootstrap() {
-    console.log('🚀 Iniciando carga de datos (Seed)...');
-    
-    // 1. Cargamos Equipos
-    await this.seedEquipos();
-    
-    // 2. Cargamos Profesores
-    await this.seedProfesores();
-    
-    console.log('🏁 Carga de datos finalizada.');
-  }
+  // En backend/src/equipos/seed.service.ts
 
-  // ---------------------------------------------------------
-  // 1. FUNCIÓN PARA CARGAR EQUIPOS
-  // ---------------------------------------------------------
-  async seedEquipos() {
-    try {
-      await this.equipoRepo.clear();
-    } catch (e) {
-      console.log('⚠️ La tabla de equipos ya estaba vacía o no se pudo limpiar.');
-    }
+async onApplicationBootstrap() {
+  const count = await this.equipoRepository.count();
+  // Comentamos la siguiente línea temporalmente si quieres forzar la recarga:
+  // if (count > 0) return; 
 
-    console.log('📦 Leyendo Excel de INVENTARIO...');
+  try {
+    const excelPath = path.join(process.cwd(), 'inventario.xlsx');
+    const workbook = XLSX.readFile(excelPath);
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rawData: any[] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-    const rutaExcel = path.join(process.cwd(), '..', 'inventario.xlsx');
+    const [header, ...rows] = rawData;
+    console.log(`📊 Total filas detectadas en Excel: ${rows.length}`);
 
-    if (!fs.existsSync(rutaExcel)) {
-      console.error(`❌ ERROR: No encuentro el archivo: ${rutaExcel}`);
-      return;
-    }
-
-    try {
-      const workbook = XLSX.readFile(rutaExcel);
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const datosRaw: any[] = XLSX.utils.sheet_to_json(sheet);
-
-      console.log(`📄 Filas encontradas en Inventario: ${datosRaw.length}`);
-
-      const equipos = datosRaw.map((fila) => {
-        // Datos brutos
-        const nOrdenador = fila['n_ordenador'] || 'Sin ID';
-        const nSerie = fila['n_serie'] || '';
-        const situacion = fila['situacion'] || 'disponible';
-        const representante = fila['representante'] || '';
-        const observaciones = fila['observaciones'] || '';
-
-        // Construcción de descripción
-        let descripcionCompleta = `PC: ${nOrdenador}`;
-        if (nSerie) descripcionCompleta += ` | SN: ${nSerie}`;
-        if (representante) descripcionCompleta += ` | Asignado: ${representante}`;
-        if (observaciones) descripcionCompleta += ` (${observaciones})`;
-
-        // Normalización de estado
-        let estadoFinal = situacion.toString().toLowerCase().trim();
-        if (!estadoFinal) estadoFinal = 'disponible';
-
-        return {
-          descripcion: descripcionCompleta,
-          estado: estadoFinal
-        };
-      });
-
-      // --- AQUÍ ESTABA EL ERROR ---
-      // Añadimos "as any" para que TypeScript no se queje por tipos estrictos
-      await this.equipoRepo.save(equipos as any);
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
       
-      console.log(`✅ ¡INVENTARIO CARGADO! ${equipos.length} equipos guardados.`);
-
-    } catch (error) {
-      console.error('❌ Error cargando inventario:', error);
-    }
+      // Relajamos la condición de salto: solo saltamos si la fila está totalmente vacía
+      if (i % 20 === 0) {
+    console.log(`⏳ Procesando fila ${i}...`);
   }
 
-  // ---------------------------------------------------------
-  // 2. FUNCIÓN PARA CARGAR PROFESORES
-  // ---------------------------------------------------------
-  async seedProfesores() {
-    try {
-      await this.profesorRepo.clear();
-    } catch (e) {
-      console.log('⚠️ La tabla de profesores ya estaba vacía.');
-    }
+  if (!row || row.length < 2) continue; 
 
-    console.log('🌱 Leyendo Excel de PROFESORES...');
+  try {
+    const data: any = {
+      n_ordenador: row[0] ? Number(row[0]) : undefined,
+      n_serie: row[1] ? String(row[1]) : 'S/N',
+      situacion: row[2] ? String(row[2]) : 'Sin ubicación',
+      representante: row[3] ? String(row[3]) : '',
+      estado: row[4] ? String(row[4]).toLowerCase() : 'disponible',
+      observaciones: row[5] ? String(row[5]) : '',
+      f_prestamo: row[6] ? String(row[6]) : '',
+    };
 
-    const rutaExcel = path.join(process.cwd(), '..', 'correos_claustro.xlsx');
-
-    if (!fs.existsSync(rutaExcel)) {
-      console.error(`❌ ERROR: No encuentro el archivo: ${rutaExcel}`);
-      return;
-    }
-
-    try {
-      const workbook = XLSX.readFile(rutaExcel);
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const datosRaw: any[] = XLSX.utils.sheet_to_json(sheet);
-
-      console.log(`📄 Filas encontradas en Profesores: ${datosRaw.length}`);
-
-      const mapaProfesores = new Map();
-
-      datosRaw.forEach((fila) => {
-        const nombre = fila['Nombre'] || fila['NOMBRE'] || fila['Apellidos y nombre'] || 'Docente';
-        const emailRaw = fila['Correo'] || fila['Email'] || fila['CORREO'] || '';
-        const email = emailRaw.toString().trim().toLowerCase();
-
-        if (email.includes('@')) {
-            mapaProfesores.set(email, {
-                nombre: nombre,
-                email: email,
-                rol: 'profesor'
-            });
-        }
-      });
-
-      const profesoresUnicos = Array.from(mapaProfesores.values());
-
-      // También usamos 'as any' aquí por si acaso
-      await this.profesorRepo.save(profesoresUnicos as any);
-      
-      console.log(`✅ ¡PROFESORES CARGADOS! ${profesoresUnicos.length} docentes.`);
-
-    } catch (error) {
-      console.error('❌ Error cargando profesores:', error);
-    }
+    const nuevo = this.equipoRepository.create(data);
+    await this.equipoRepository.save(nuevo);
+  } catch (rowError) {
+    // Si una fila falla, esto nos dirá EXACTAMENTE por qué
+    console.error(`❌ Error REAL en fila ${i + 1} (Contenido: ${row[1]}):`, rowError.message);
   }
-
-  async seedAlumnos() {}
+}
+    console.log('✅ Proceso de carga finalizado');
+  } catch (error) {
+    console.error('❌ Error crítico en el Seed:', error.message);
+  }
+}
 }
