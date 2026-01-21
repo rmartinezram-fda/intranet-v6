@@ -1,35 +1,33 @@
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
-const MenuPrincipal = () => {
-  const navigate = useNavigate();
-
-  const opciones = [
-    { titulo: 'Consultar Equipos', desc: 'Ver inventario completo.', ruta: '/equipos', color: '#2563eb' },
-    { titulo: 'Prestar Equipo', desc: 'Asignar equipo a alguien.', ruta: '/prestar', color: '#16a34a' },
-    { titulo: 'Devolver Equipo', desc: 'Registrar devolución.', ruta: '/devolver', color: '#ea580c' },
-    { titulo: 'Histórico', desc: 'Ver registros pasados.', ruta: '/historico', color: '#6b7280'}
-  ];
-
+function MenuPrincipal() {
   return (
-    <div style={{ padding: '40px', textAlign: 'center' }}>
-      <h2 style={{ marginBottom: '30px' }}>Panel de Control SIGFA</h2>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
-        {opciones.map((opc) => (
-          <div 
-            key={opc.ruta}
-            onClick={() => navigate(opc.ruta)}
-            style={{ 
-              backgroundColor: opc.color, color: 'white', padding: '30px', 
-              borderRadius: '12px', cursor: 'pointer', transition: '0.3s' 
-            }}
-          >
-            <h3>{opc.titulo}</h3>
-            <p>{opc.desc}</p>
-          </div>
-        ))}
+    <div className="menu-container">
+      <h2>Panel de Gestión</h2>
+      {/* AQUI ESTÁ LA CLAVE: className="menu-grid" */}
+      <div className="menu-grid"> 
+        <Link to="/prestar" className="menu-card">
+          <span className="icon">📤</span>
+          <h3>Prestar Equipo</h3>
+        </Link>
+        
+        <Link to="/devolver" className="menu-card">
+          <span className="icon">📥</span>
+          <h3>Devolver Equipo</h3>
+        </Link>
+
+        <Link to="/equipos" className="menu-card">
+          <span className="icon">💻</span>
+          <h3>Inventario</h3>
+        </Link>
+
+        <Link to="/historico" className="menu-card">
+          <span className="icon">📜</span>
+          <h3>Histórico</h3>
+        </Link>
       </div>
     </div>
   );
-};
+}
 
 export default MenuPrincipal;

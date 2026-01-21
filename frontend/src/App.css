@@ -57,3 +57,39 @@
 .delete-btn:hover {
   background-color: #cc0000;
 }
+
+/* Contenedor del menú principal */
+.menu-grid {
+  display: flex;
+  flex-direction: row; /* Alineación horizontal */
+  justify-content: center; /* Centrados en la pantalla */
+  gap: 2rem; /* Espacio entre tarjetas */
+  flex-wrap: wrap; /* Si la pantalla es pequeña, que bajen */
+  margin-top: 2rem;
+}
+
+/* Diseño de cada tarjeta */
+.menu-card {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  text-align: center;
+  width: 200px;
+  text-decoration: none;
+  color: #333;
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid #eee;
+}
+
+.menu-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 15px rgba(0,0,0,0.15);
+  border-color: #646cff;
+}
+
+.icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 1rem;
+}
